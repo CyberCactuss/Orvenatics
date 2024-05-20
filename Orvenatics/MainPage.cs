@@ -19,9 +19,15 @@ namespace Orvenatics
             richTextBox1.TextChanged += new EventHandler(richTextBox1_TextChanged);
             richTextBox1.Text = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
 
+            // Add event handler for pictureBox2
+            pictureBox2.Paint += pictureBox2_Paint;
+        }
 
-        // Add event handler for pictureBox2
-        pictureBox2.Paint += pictureBox2_Paint;
+        private void richTextBox1_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            // Adjust text offset
+            richTextBox1.SelectionIndent = 20; // Adjust the value as needed
+            
         }
 
         private void MainPage_Load(object sender, EventArgs e)
