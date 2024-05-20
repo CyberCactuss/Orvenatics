@@ -296,7 +296,6 @@
             this.richTextBox1.Size = new System.Drawing.Size(948, 715);
             this.richTextBox1.TabIndex = 6;
             this.richTextBox1.Text = "";
-            this.richTextBox1.TextChanged += new System.EventHandler(this.richTextBox1_TextChanged);
             // 
             // pictureBox2
             // 
@@ -352,5 +351,7 @@
         private Guna.UI2.WinForms.Guna2Button guna2Button6;
         private System.Windows.Forms.RichTextBox richTextBox1;
         private System.Windows.Forms.PictureBox pictureBox2;
+
     }
 }
+
