@@ -122,11 +122,44 @@ namespace Orvenatics
                         }
                     }
                 }
+                else if (line.StartsWith("ulit"))
+                {
+                    // Extract the loop parameters
+                    int openParenIndex = line.IndexOf('(');
+                    int closeParenIndex = line.LastIndexOf(')');
+                    if (openParenIndex != -1 && closeParenIndex != -1 && closeParenIndex > openParenIndex)
+                    {
+                        string loopParams = line.Substring(openParenIndex + 1, closeParenIndex - openParenIndex - 1).Trim();
+
+                        // Split loop parameters into parts
+                        string[] loopParts = loopParams.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+                        if (loopParts.Length == 2 && Variables.ContainsKey(loopParts[0]) && int.TryParse(loopParts[1], out int iterations))
+                        {
+                            // Execute the loop 
+                            StringBuilder codeBlock = new StringBuilder();
+                            for (int i = 0; i < iterations; i++)
+                            {
+                                codeBlock.AppendLine(line.Substring(closeParenIndex + 1).Trim()); // Execute the code block
+                            }
+                            output += Interpret(codeBlock.ToString()); // Interpret the code block and append its output
+                        }
+                        else
+                        {
+                            throw new Exception("Syntax error: Invalid syntax in for loop statement.");
+                        }
+                    }
+                    else
+                    {
+                        throw new Exception("Syntax error: Missing parentheses in for loop statement.");
+                    }
+                }
                 else
                 {
-                    
+                    // Unknown command, show error
                     throw new Exception("Syntax error: Unknown command.");
                 }
+
             }
 
             return output;
@@ -144,7 +177,7 @@ namespace Orvenatics
 
         private void richTextBox1_TextChanged(object sender, EventArgs e)
         {
-
+                
         }
 
         private void Form1_Load(object sender, EventArgs e)
