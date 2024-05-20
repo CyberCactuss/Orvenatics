@@ -37,138 +37,129 @@ namespace Orvenatics
             }
         }
 
-        
+
         private string Interpret(string code)
         {
             string output = "";
-
-            
             string[] lines = code.Split('\n').Select(line => line.Trim()).ToArray();
 
             foreach (string line in lines)
             {
-                
-                if (line.StartsWith("kotoba"))
+                if (string.IsNullOrWhiteSpace(line))
                 {
-                    
-                    int equalsIndex = line.IndexOf('=');
-                    if (equalsIndex != -1)
-                    {
-                        string variableName = line.Substring(6, equalsIndex - 6).Trim();
-                        string value = line.Substring(equalsIndex + 1).Trim();
-
-                        
-                        if (!value.StartsWith("\"") || !value.EndsWith("\""))
-                            throw new Exception("Syntax error: String variable '" + variableName + "' must be enclosed in quotation marks.");
-
-                       
-                        Variables[variableName] = value.Substring(1, value.Length - 2);
-                    }
-                    else
-                    {
-                        throw new Exception("Syntax error: Missing '=' in assignment statement.");
-                    }
+                    continue; // Skip empty lines
                 }
-                else if (line.StartsWith("bango"))
+
+                try
                 {
-                    
-                    int equalsIndex = line.IndexOf('=');
-                    if (equalsIndex != -1)
+                    if (line.StartsWith("kotoba"))
                     {
-                        string variableName = line.Substring(5, equalsIndex - 5).Trim();
-                        string value = line.Substring(equalsIndex + 1).Trim();
-
-                        
-                        if (!int.TryParse(value, out _))
-                            throw new Exception("Data type error: Variable '" + variableName + "' must be assigned a numeric value.");
-
-                        
-                        Variables[variableName] = value;
-                    }
-                    else
-                    {
-                        throw new Exception("Syntax error: Missing '=' in assignment statement.");
-                    }
-                }
-                else if (line.StartsWith("batmopinapakita"))
-                {
-                    
-                    string variableName = line.Substring(16).Trim();
-
-                    
-                    if (!variableName.StartsWith("(") || !variableName.EndsWith(")") || variableName.Length < 2)
-                        throw new Exception("Syntax error: Missing parentheses in print statement.");
-
-                    
-                    variableName = variableName.Substring(1, variableName.Length - 2).Trim();
-
-                    
-                    if (variableName.StartsWith("\"") && variableName.EndsWith("\""))
-                    {
-                        
-                        output += variableName.Substring(1, variableName.Length - 2) + Environment.NewLine;
-                    }
-                    else
-                    {
-                        
-                        if (Variables.ContainsKey(variableName))
+                        int equalsIndex = line.IndexOf('=');
+                        if (equalsIndex != -1)
                         {
-                            
-                            output += Variables[variableName] + Environment.NewLine;
+                            string variableName = line.Substring(6, equalsIndex - 6).Trim();
+                            string value = line.Substring(equalsIndex + 1).Trim();
+
+                            if (!value.StartsWith("\"") || !value.EndsWith("\""))
+                                throw new Exception("Syntax error: String variable '" + variableName + "' must be enclosed in quotation marks.");
+
+                            Variables[variableName] = value.Substring(1, value.Length - 2);
                         }
                         else
                         {
-                            throw new Exception("Error: Variable '" + variableName + "' not found!");
+                            throw new Exception("Syntax error: Missing '=' in assignment statement.");
                         }
                     }
-                }
-                else if (line.StartsWith("ulit"))
-                {
-                    // Extract the loop parameters
-                    int openParenIndex = line.IndexOf('(');
-                    int closeParenIndex = line.LastIndexOf(')');
-                    if (openParenIndex != -1 && closeParenIndex != -1 && closeParenIndex > openParenIndex)
+                    else if (line.StartsWith("bango"))
                     {
-                        string loopParams = line.Substring(openParenIndex + 1, closeParenIndex - openParenIndex - 1).Trim();
-
-                        // Split loop parameters into parts
-                        string[] loopParts = loopParams.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-
-                        if (loopParts.Length == 2 && Variables.ContainsKey(loopParts[0]) && int.TryParse(loopParts[1], out int iterations))
+                        int equalsIndex = line.IndexOf('=');
+                        if (equalsIndex != -1)
                         {
-                            // Execute the loop 
-                            StringBuilder codeBlock = new StringBuilder();
-                            for (int i = 0; i < iterations; i++)
+                            string variableName = line.Substring(5, equalsIndex - 5).Trim();
+                            string value = line.Substring(equalsIndex + 1).Trim();
+
+                            if (!int.TryParse(value, out _))
+                                throw new Exception("Data type error: Variable '" + variableName + "' must be assigned a numeric value.");
+
+                            Variables[variableName] = value;
+                        }
+                        else
+                        {
+                            throw new Exception("Syntax error: Missing '=' in assignment statement.");
+                        }
+                    }
+                    else if (line.StartsWith("batmopinapakita"))
+                    {
+                        string variableName = line.Substring(16).Trim();
+
+                        if (!variableName.StartsWith("(") || !variableName.EndsWith(")") || variableName.Length < 2)
+                            throw new Exception("Syntax error: Missing parentheses in print statement.");
+
+                        variableName = variableName.Substring(1, variableName.Length - 2).Trim();
+
+                        if (variableName.StartsWith("\"") && variableName.EndsWith("\""))
+                        {
+                            output += variableName.Substring(1, variableName.Length - 2) + Environment.NewLine;
+                        }
+                        else
+                        {
+                            if (Variables.ContainsKey(variableName))
                             {
-                                codeBlock.AppendLine(line.Substring(closeParenIndex + 1).Trim()); // Execute the code block
+                                output += Variables[variableName] + Environment.NewLine;
                             }
-                            output += Interpret(codeBlock.ToString()); // Interpret the code block and append its output
+                            else
+                            {
+                                throw new Exception("Error: Variable '" + variableName + "' not found!");
+                            }
+                        }
+                    }
+                    else if (line.StartsWith("ulit"))
+                    {
+                        int openParenIndex = line.IndexOf('(');
+                        int closeParenIndex = line.LastIndexOf(')');
+                        if (openParenIndex != -1 && closeParenIndex != -1 && closeParenIndex > openParenIndex)
+                        {
+                            string loopParams = line.Substring(openParenIndex + 1, closeParenIndex - openParenIndex - 1).Trim();
+                            string[] loopParts = loopParams.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+                            if (loopParts.Length == 2 && Variables.ContainsKey(loopParts[0]) && int.TryParse(loopParts[1], out int iterations))
+                            {
+                                StringBuilder codeBlock = new StringBuilder();
+                                for (int i = 0; i < iterations; i++)
+                                {
+                                    codeBlock.AppendLine(line.Substring(closeParenIndex + 1).Trim());
+                                }
+                                output += Interpret(codeBlock.ToString());
+                            }
+                            else
+                            {
+                                throw new Exception("Syntax error: Invalid syntax in for loop statement.");
+                            }
                         }
                         else
                         {
-                            throw new Exception("Syntax error: Invalid syntax in for loop statement.");
+                            throw new Exception("Syntax error: Missing parentheses in for loop statement.");
                         }
                     }
                     else
                     {
-                        throw new Exception("Syntax error: Missing parentheses in for loop statement.");
+                        throw new Exception("Syntax error: Unknown command. Line: " + line);
                     }
                 }
-                else
+                catch (Exception ex)
                 {
-                    // Unknown command, show error
-                    throw new Exception("Syntax error: Unknown command.");
+                    output += "Error processing line: " + line + ". Exception: " + ex.Message + Environment.NewLine;
                 }
-
             }
 
             return output;
         }
 
-        // Dictionary to store variables
+
+        
         private Dictionary<string, string> Variables = new Dictionary<string, string>();
 
-        // Helper method to check if a string is numeric
+        
         private bool IsNumeric(string value)
         {
             return int.TryParse(value, out _);
