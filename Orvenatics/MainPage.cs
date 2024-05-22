@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -9,6 +10,10 @@ namespace Orvenatics
 {
     public partial class MainPage : Form
     {
+
+        private Stack<string> undoStack = new Stack<string>();
+        private Stack<string> redoStack = new Stack<string>();
+
         public MainPage()
         {
             InitializeComponent();
@@ -19,14 +24,14 @@ namespace Orvenatics
             richTextBox1.TextChanged += new EventHandler(richTextBox1_TextChanged);
             richTextBox1.Text = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
 
-            // Add event handler for pictureBox2
+            
             pictureBox2.Paint += pictureBox2_Paint;
         }
 
         private void richTextBox1_KeyPress(object sender, KeyPressEventArgs e)
         {
-            // Adjust text offset
-            richTextBox1.SelectionIndent = 20; // Adjust the value as needed
+            
+            richTextBox1.SelectionIndent = 20; 
             
         }
 
@@ -68,7 +73,7 @@ namespace Orvenatics
             {
                 if (string.IsNullOrWhiteSpace(line))
                 {
-                    continue; // Skip empty lines
+                    continue;
                 }
 
                 try
@@ -99,10 +104,8 @@ namespace Orvenatics
                             string variableName = line.Substring(5, equalsIndex - 5).Trim();
                             string value = line.Substring(equalsIndex + 1).Trim();
 
-                            if (!int.TryParse(value, out _))
-                                throw new Exception("Data type error: Variable '" + variableName + "' must be assigned a numeric value.");
-
-                            Variables[variableName] = value;
+                            string evaluatedValue = EvaluateExpression(value).ToString();
+                            Variables[variableName] = evaluatedValue;
                         }
                         else
                         {
@@ -111,27 +114,21 @@ namespace Orvenatics
                     }
                     else if (line.StartsWith("batmopinapakita"))
                     {
-                        string variableName = line.Substring(16).Trim();
+                        string expression = line.Substring(16).Trim();
 
-                        if (!variableName.StartsWith("(") || !variableName.EndsWith(")") || variableName.Length < 2)
+                        if (!expression.StartsWith("(") || !expression.EndsWith(")") || expression.Length < 2)
                             throw new Exception("Syntax error: Missing parentheses in print statement.");
 
-                        variableName = variableName.Substring(1, variableName.Length - 2).Trim();
+                        expression = expression.Substring(1, expression.Length - 2).Trim();
 
-                        if (variableName.StartsWith("\"") && variableName.EndsWith("\""))
+                        if (expression.StartsWith("\"") && expression.EndsWith("\""))
                         {
-                            output += variableName.Substring(1, variableName.Length - 2) + Environment.NewLine;
+                            output += expression.Substring(1, expression.Length - 2) + Environment.NewLine;
                         }
                         else
                         {
-                            if (Variables.ContainsKey(variableName))
-                            {
-                                output += Variables[variableName] + Environment.NewLine;
-                            }
-                            else
-                            {
-                                throw new Exception("Error: Variable '" + variableName + "' not found!");
-                            }
+                            string evaluatedValue = EvaluateExpression(expression).ToString();
+                            output += evaluatedValue + Environment.NewLine;
                         }
                     }
                     else if (line.StartsWith("ulit"))
@@ -176,6 +173,17 @@ namespace Orvenatics
             return output;
         }
 
+        private double EvaluateExpression(string expression)
+        {
+            foreach (var variable in Variables)
+            {
+                expression = expression.Replace(variable.Key, variable.Value);
+            }
+
+            var table = new DataTable();
+            return Convert.ToDouble(table.Compute(expression, string.Empty));
+        }
+
 
 
         private Dictionary<string, string> Variables = new Dictionary<string, string>();
@@ -188,17 +196,47 @@ namespace Orvenatics
 
         private void guna2Button1_Click(object sender, EventArgs e) // SAVE FILE AS TXT
         {
+            SaveFileDialog saveFileDialog = new SaveFileDialog
+            {
+                Filter = "Text Files (*.txt)|*.txt",
+                DefaultExt = "txt",
+                AddExtension = true
+            };
 
+            if (saveFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                try
+                {
+                    System.IO.File.WriteAllText(saveFileDialog.FileName, richTextBox1.Text);
+                    MessageBox.Show("File saved successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error saving file: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
         }
 
         private void guna2Button4_Click(object sender, EventArgs e) // UNDO BUTTON
         {
-
+            if (undoStack.Count > 0)
+            {
+                redoStack.Push(richTextBox1.Text);
+                richTextBox1.TextChanged -= richTextBox1_TextChanged;
+                richTextBox1.Text = undoStack.Pop();
+                richTextBox1.TextChanged += richTextBox1_TextChanged;
+            }
         }
 
         private void guna2Button5_Click(object sender, EventArgs e) // REDO BUTTON
         {
-
+            if (redoStack.Count > 0)
+            {
+                undoStack.Push(richTextBox1.Text);
+                richTextBox1.TextChanged -= richTextBox1_TextChanged;
+                richTextBox1.Text = redoStack.Pop();
+                richTextBox1.TextChanged += richTextBox1_TextChanged;
+            }
         }
 
         private void guna2Button3_Click(object sender, EventArgs e) // CLOSE BUTTON
@@ -251,14 +289,14 @@ namespace Orvenatics
             int lastIndex = richTextBox1.GetCharIndexFromPosition(new Point(0, (int)g.VisibleClipBounds.Y + pictureBox2.Height));
             int lastLine = richTextBox1.GetLineFromCharIndex(lastIndex);
 
-            const float verticalPadding = 3.0f; // Add a constant for vertical padding
+            const float verticalPadding = 3.0f; 
 
-            using (SolidBrush brush = new SolidBrush(Color.White)) // Changed color to Gray
+            using (SolidBrush brush = new SolidBrush(Color.White)) 
             {
                 for (int i = firstLine; i <= lastLine; i++)
                 {
                     Point pos = richTextBox1.GetPositionFromCharIndex(richTextBox1.GetFirstCharIndexFromLine(i));
-                    float y = pos.Y + verticalPadding; // Add padding to the Y-coordinate
+                    float y = pos.Y + verticalPadding; 
                     g.DrawString((i + 1).ToString(), richTextBox1.Font, brush, pictureBox2.Width - g.MeasureString((i + 1).ToString(), richTextBox1.Font).Width, y);
                 }
             }
@@ -266,7 +304,12 @@ namespace Orvenatics
 
         private void richTextBox1_TextChanged_1(object sender, EventArgs e)
         {
-
+            pictureBox2.Invalidate();
+            if (richTextBox1.Focused)
+            {
+                undoStack.Push(richTextBox1.Text);
+                redoStack.Clear();
+            }
         }
 
         private void richTextBox2_TextChanged(object sender, EventArgs e)
@@ -276,8 +319,13 @@ namespace Orvenatics
 
         private void guna2Button3_Click_1(object sender, EventArgs e)
         {
-            Form1 hi = new Form1();
-            hi.Show();
+            
+        }
+
+        private void guna2Button6_Click(object sender, EventArgs e)
+        {
+            Rules r = new Rules();
+            r.ShowDialog();
             this.Hide();
         }
     }
