@@ -11,7 +11,6 @@ namespace Orvenatics
 {
     public partial class MainPage : Form
     {
-
         private Stack<string> undoStack = new Stack<string>();
         private Stack<string> redoStack = new Stack<string>();
 
@@ -21,30 +20,22 @@ namespace Orvenatics
             richTextBox1.Resize += new EventHandler(richTextBox1_Resize);
             richTextBox1.VScroll += new EventHandler(richTextBox1_VScroll);
             richTextBox1.Paint += new PaintEventHandler(richTextBox1_Paint);
-            richTextBox1.Paint += new PaintEventHandler(richTextBox1_Paint);
             richTextBox1.TextChanged += new EventHandler(richTextBox1_TextChanged);
             richTextBox1.Text = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
-
-            
             pictureBox2.Paint += pictureBox2_Paint;
-
         }
 
         private void richTextBox1_KeyPress(object sender, KeyPressEventArgs e)
         {
-            
-            richTextBox1.SelectionIndent = 20; 
-            
+            richTextBox1.SelectionIndent = 20;
         }
 
         private void MainPage_Load(object sender, EventArgs e)
         {
-
         }
 
         private void pictureBox2_Click(object sender, EventArgs e)
         {
-
         }
 
         private void guna2Button2_Click(object sender, EventArgs e)
@@ -53,15 +44,11 @@ namespace Orvenatics
 
             try
             {
-
                 string output = Interpret(code);
-
-
                 richTextBox2.Text = output;
             }
             catch (Exception ex)
             {
-
                 richTextBox2.Text = "Error: " + ex.Message;
             }
         }
@@ -87,7 +74,6 @@ namespace Orvenatics
                         {
                             string variableName = line.Substring(6, equalsIndex - 6).Trim();
                             string value = line.Substring(equalsIndex + 1).Trim();
-
 
                             if (value.Contains("+"))
                             {
@@ -218,11 +204,8 @@ namespace Orvenatics
             return result.ToString();
         }
 
-
-
         private Dictionary<string, string> Variables = new Dictionary<string, string>();
 
-        
         private bool IsNumeric(string value)
         {
             return int.TryParse(value, out _);
@@ -280,7 +263,6 @@ namespace Orvenatics
 
         private void pictureBox2_Click_1(object sender, EventArgs e) // PICTURE BOX FOR NUMBER LINES
         {
-
         }
 
         private void richTextBox1_TextChanged(object sender, EventArgs e)
@@ -323,14 +305,14 @@ namespace Orvenatics
             int lastIndex = richTextBox1.GetCharIndexFromPosition(new Point(0, (int)g.VisibleClipBounds.Y + pictureBox2.Height));
             int lastLine = richTextBox1.GetLineFromCharIndex(lastIndex);
 
-            const float verticalPadding = 3.0f; 
+            const float verticalPadding = 3.0f;
 
-            using (SolidBrush brush = new SolidBrush(Color.White)) 
+            using (SolidBrush brush = new SolidBrush(Color.White))
             {
                 for (int i = firstLine; i <= lastLine; i++)
                 {
                     Point pos = richTextBox1.GetPositionFromCharIndex(richTextBox1.GetFirstCharIndexFromLine(i));
-                    float y = pos.Y + verticalPadding; 
+                    float y = pos.Y + verticalPadding;
                     g.DrawString((i + 1).ToString(), richTextBox1.Font, brush, pictureBox2.Width - g.MeasureString((i + 1).ToString(), richTextBox1.Font).Width, y);
                 }
             }
@@ -348,12 +330,10 @@ namespace Orvenatics
 
         private void richTextBox2_TextChanged(object sender, EventArgs e)
         {
-
         }
 
         private void guna2Button3_Click_1(object sender, EventArgs e)
         {
-            
         }
 
         private void guna2Button6_Click(object sender, EventArgs e)
@@ -381,34 +361,55 @@ namespace Orvenatics
             Dictionary<string, int> operatorCounts = new Dictionary<string, int>
             {
                 { "+", 0 },
+                { "-", 0 },
+                { "*", 0 },
+                { "/", 0 }, // Added divide operator
                 { "=", 0 },
                 { "()", 0 }
             };
 
-            
+            Dictionary<string, int> variableCounts = new Dictionary<string, int>();
+
+            // Regular expressions for keywords, functions, and operators
             string keywordPattern = @"\b(kotoba|bango)\b";
             string functionPattern = @"\b(batmopinapakita)\b";
-            string operatorPattern = @"(\+|=|\(\))";
+            string operatorPattern = @"(\+|\-|\*|\/|=|\(\))"; // Updated to include the divide operator
+            string variablePattern = @"\b(kotoba|bango)\s+([a-zA-Z_][a-zA-Z0-9_]*)";
 
-            
+            // Count keywords
+
+            // Count keywords
             foreach (Match match in Regex.Matches(code, keywordPattern))
             {
                 keywordCounts[match.Value]++;
             }
 
-            
+            // Count functions
             foreach (Match match in Regex.Matches(code, functionPattern))
             {
                 functionCounts[match.Value]++;
             }
 
-            
+            // Count operators
             foreach (Match match in Regex.Matches(code, operatorPattern))
             {
                 operatorCounts[match.Value]++;
             }
 
-           
+            foreach (Match match in Regex.Matches(code, variablePattern))
+            {
+                string variableName = match.Groups[2].Value;
+                if (variableCounts.ContainsKey(variableName))
+                {
+                    variableCounts[variableName]++;
+                }
+                else
+                {
+                    variableCounts[variableName] = 1;
+                }
+            }
+
+            // Build output string
             StringBuilder output = new StringBuilder();
             output.AppendLine("Keywords:");
 
@@ -429,8 +430,14 @@ namespace Orvenatics
                 output.AppendLine($"{op.Key}: {op.Value}");
             }
 
+            output.AppendLine("\nVariables:");
+            foreach (var variable in variableCounts)
+            {
+                output.AppendLine($"{variable.Key}: {variable.Value}");
+            }
+
+
             richTextBox2.Text = output.ToString();
         }
     }
-    
 }
