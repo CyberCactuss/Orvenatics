@@ -14,6 +14,13 @@ namespace Orvenatics
         private Stack<string> undoStack = new Stack<string>();
         private Stack<string> redoStack = new Stack<string>();
 
+        private Dictionary<string, string> wordBank = new Dictionary<string, string>
+        {
+            { "kotoba", "string" },
+            { "bango", "int" },
+            { "batmopinapakita", "function" }
+        };
+
         public MainPage()
         {
             InitializeComponent();
@@ -24,6 +31,36 @@ namespace Orvenatics
             richTextBox1.Text = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
             pictureBox2.Paint += pictureBox2_Paint;
         }
+
+        private List<string> Tokenize(string line)
+        {
+            List<string> tokens = new List<string>();
+
+            string[] words = line.Split(' ');
+
+            foreach (string word in words)
+            {
+                if (wordBank.ContainsKey(word.ToLower()))
+                {
+                    string tokenType = wordBank[word.ToLower()];
+                    if (tokenType == "int" || tokenType == "string" || tokenType == "function")
+                    {
+                        tokens.Add(tokenType);
+                    }
+                    else
+                    {
+                        tokens.Add("unknown");
+                    }
+                }
+                else
+                {
+                    tokens.Add("identifier");
+                }
+            }
+
+            return tokens;
+        }
+
 
         private void richTextBox1_KeyPress(object sender, KeyPressEventArgs e)
         {
@@ -69,29 +106,7 @@ namespace Orvenatics
                 {
                     if (line.StartsWith("kotoba"))
                     {
-                        int equalsIndex = line.IndexOf('=');
-                        if (equalsIndex != -1)
-                        {
-                            string variableName = line.Substring(6, equalsIndex - 6).Trim();
-                            string value = line.Substring(equalsIndex + 1).Trim();
-
-                            if (value.Contains("+"))
-                            {
-                                string evaluatedValue = EvaluateStringExpression(value);
-                                Variables[variableName] = evaluatedValue;
-                            }
-                            else
-                            {
-                                if (!value.StartsWith("\"") || !value.EndsWith("\""))
-                                    throw new Exception("Syntax error: String variable '" + variableName + "' must be enclosed in quotation marks.");
-
-                                Variables[variableName] = value.Substring(1, value.Length - 2);
-                            }
-                        }
-                        else
-                        {
-                            throw new Exception("Syntax error: Missing '=' in assignment statement.");
-                        }
+                        // Handle string assignment
                     }
                     else if (line.StartsWith("bango"))
                     {
@@ -99,6 +114,10 @@ namespace Orvenatics
                         if (equalsIndex != -1)
                         {
                             string variableName = line.Substring(5, equalsIndex - 5).Trim();
+                            if (wordBank.ContainsKey(variableName))
+                            {
+                                throw new Exception("Syntax error: '" + variableName + " ay isang keyword at hindi pwedeng gamitin bilang variable.");
+                            }
                             string value = line.Substring(equalsIndex + 1).Trim();
 
                             string evaluatedValue = EvaluateExpression(value).ToString();
@@ -111,51 +130,8 @@ namespace Orvenatics
                     }
                     else if (line.StartsWith("batmopinapakita"))
                     {
-                        string expression = line.Substring(16).Trim();
-
-                        if (!expression.StartsWith("(") || !expression.EndsWith(")") || expression.Length < 2)
-                            throw new Exception("Syntax error: Missing parentheses in print statement.");
-
-                        expression = expression.Substring(1, expression.Length - 2).Trim();
-
-                        if (expression.StartsWith("\"") && expression.EndsWith("\""))
-                        {
-                            output += expression.Substring(1, expression.Length - 2) + Environment.NewLine;
-                        }
-                        else
-                        {
-                            string evaluatedValue = EvaluateExpression(expression).ToString();
-                            output += evaluatedValue + Environment.NewLine;
-                        }
                     }
-                    else if (line.StartsWith("ulit"))
-                    {
-                        int openParenIndex = line.IndexOf('(');
-                        int closeParenIndex = line.LastIndexOf(')');
-                        if (openParenIndex != -1 && closeParenIndex != -1 && closeParenIndex > openParenIndex)
-                        {
-                            string loopParams = line.Substring(openParenIndex + 1, closeParenIndex - openParenIndex - 1).Trim();
-                            string[] loopParts = loopParams.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
-                            if (loopParts.Length == 2 && Variables.ContainsKey(loopParts[0]) && int.TryParse(loopParts[1], out int iterations))
-                            {
-                                StringBuilder codeBlock = new StringBuilder();
-                                for (int i = 0; i < iterations; i++)
-                                {
-                                    codeBlock.AppendLine(line.Substring(closeParenIndex + 1).Trim());
-                                }
-                                output += Interpret(codeBlock.ToString());
-                            }
-                            else
-                            {
-                                throw new Exception("Syntax error: Invalid syntax in for loop statement.");
-                            }
-                        }
-                        else
-                        {
-                            throw new Exception("Syntax error: Missing parentheses in for loop statement.");
-                        }
-                    }
                     else
                     {
                         throw new Exception("Syntax error: Unknown command. Line: " + line);
@@ -169,6 +145,10 @@ namespace Orvenatics
 
             return output;
         }
+
+
+
+
 
         private double EvaluateExpression(string expression)
         {
