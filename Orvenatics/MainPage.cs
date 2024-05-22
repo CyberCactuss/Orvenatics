@@ -368,10 +368,15 @@ namespace Orvenatics
                 { "()", 0 }
             };
 
+            Dictionary<string, int> variableCounts = new Dictionary<string, int>();
+
             // Regular expressions for keywords, functions, and operators
             string keywordPattern = @"\b(kotoba|bango)\b";
             string functionPattern = @"\b(batmopinapakita)\b";
             string operatorPattern = @"(\+|\-|\*|\/|=|\(\))"; // Updated to include the divide operator
+            string variablePattern = @"\b(kotoba|bango)\s+([a-zA-Z_][a-zA-Z0-9_]*)";
+
+            // Count keywords
 
             // Count keywords
             foreach (Match match in Regex.Matches(code, keywordPattern))
@@ -389,6 +394,19 @@ namespace Orvenatics
             foreach (Match match in Regex.Matches(code, operatorPattern))
             {
                 operatorCounts[match.Value]++;
+            }
+
+            foreach (Match match in Regex.Matches(code, variablePattern))
+            {
+                string variableName = match.Groups[2].Value;
+                if (variableCounts.ContainsKey(variableName))
+                {
+                    variableCounts[variableName]++;
+                }
+                else
+                {
+                    variableCounts[variableName] = 1;
+                }
             }
 
             // Build output string
@@ -411,6 +429,13 @@ namespace Orvenatics
             {
                 output.AppendLine($"{op.Key}: {op.Value}");
             }
+
+            output.AppendLine("\nVariables:");
+            foreach (var variable in variableCounts)
+            {
+                output.AppendLine($"{variable.Key}: {variable.Value}");
+            }
+
 
             richTextBox2.Text = output.ToString();
         }
