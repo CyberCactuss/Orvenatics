@@ -88,6 +88,7 @@ namespace Orvenatics
                             string variableName = line.Substring(6, equalsIndex - 6).Trim();
                             string value = line.Substring(equalsIndex + 1).Trim();
 
+
                             if (value.Contains("+"))
                             {
                                 string evaluatedValue = EvaluateStringExpression(value);
@@ -384,30 +385,30 @@ namespace Orvenatics
                 { "()", 0 }
             };
 
-            // Regular expressions for keywords, functions, and operators
+            
             string keywordPattern = @"\b(kotoba|bango)\b";
             string functionPattern = @"\b(batmopinapakita)\b";
             string operatorPattern = @"(\+|=|\(\))";
 
-            // Count keywords
+            
             foreach (Match match in Regex.Matches(code, keywordPattern))
             {
                 keywordCounts[match.Value]++;
             }
 
-            // Count functions
+            
             foreach (Match match in Regex.Matches(code, functionPattern))
             {
                 functionCounts[match.Value]++;
             }
 
-            // Count operators
+            
             foreach (Match match in Regex.Matches(code, operatorPattern))
             {
                 operatorCounts[match.Value]++;
             }
 
-            // Build output string
+           
             StringBuilder output = new StringBuilder();
             output.AppendLine("Keywords:");
 
