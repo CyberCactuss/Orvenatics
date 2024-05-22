@@ -4,6 +4,7 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 namespace Orvenatics
@@ -26,6 +27,7 @@ namespace Orvenatics
 
             
             pictureBox2.Paint += pictureBox2_Paint;
+
         }
 
         private void richTextBox1_KeyPress(object sender, KeyPressEventArgs e)
@@ -86,10 +88,18 @@ namespace Orvenatics
                             string variableName = line.Substring(6, equalsIndex - 6).Trim();
                             string value = line.Substring(equalsIndex + 1).Trim();
 
-                            if (!value.StartsWith("\"") || !value.EndsWith("\""))
-                                throw new Exception("Syntax error: String variable '" + variableName + "' must be enclosed in quotation marks.");
+                            if (value.Contains("+"))
+                            {
+                                string evaluatedValue = EvaluateStringExpression(value);
+                                Variables[variableName] = evaluatedValue;
+                            }
+                            else
+                            {
+                                if (!value.StartsWith("\"") || !value.EndsWith("\""))
+                                    throw new Exception("Syntax error: String variable '" + variableName + "' must be enclosed in quotation marks.");
 
-                            Variables[variableName] = value.Substring(1, value.Length - 2);
+                                Variables[variableName] = value.Substring(1, value.Length - 2);
+                            }
                         }
                         else
                         {
@@ -182,6 +192,29 @@ namespace Orvenatics
 
             var table = new DataTable();
             return Convert.ToDouble(table.Compute(expression, string.Empty));
+        }
+
+        private string EvaluateStringExpression(string expression)
+        {
+            StringBuilder result = new StringBuilder();
+            string[] parts = expression.Split('+');
+            foreach (var part in parts)
+            {
+                string trimmedPart = part.Trim();
+                if (Variables.ContainsKey(trimmedPart))
+                {
+                    result.Append(Variables[trimmedPart]);
+                }
+                else if (trimmedPart.StartsWith("\"") && trimmedPart.EndsWith("\""))
+                {
+                    result.Append(trimmedPart.Substring(1, trimmedPart.Length - 2));
+                }
+                else
+                {
+                    throw new Exception("Syntax error: Invalid string expression.");
+                }
+            }
+            return result.ToString();
         }
 
 
@@ -328,5 +361,75 @@ namespace Orvenatics
             r.ShowDialog();
             this.Hide();
         }
+
+        private void guna2Button7_Click(object sender, EventArgs e)
+        {
+            string code = richTextBox1.Text;
+
+            Dictionary<string, int> keywordCounts = new Dictionary<string, int>
+            {
+                { "kotoba", 0 },
+                { "bango", 0 }
+            };
+
+            Dictionary<string, int> functionCounts = new Dictionary<string, int>
+            {
+                { "batmopinapakita", 0 }
+            };
+
+            Dictionary<string, int> operatorCounts = new Dictionary<string, int>
+            {
+                { "+", 0 },
+                { "=", 0 },
+                { "()", 0 }
+            };
+
+            // Regular expressions for keywords, functions, and operators
+            string keywordPattern = @"\b(kotoba|bango)\b";
+            string functionPattern = @"\b(batmopinapakita)\b";
+            string operatorPattern = @"(\+|=|\(\))";
+
+            // Count keywords
+            foreach (Match match in Regex.Matches(code, keywordPattern))
+            {
+                keywordCounts[match.Value]++;
+            }
+
+            // Count functions
+            foreach (Match match in Regex.Matches(code, functionPattern))
+            {
+                functionCounts[match.Value]++;
+            }
+
+            // Count operators
+            foreach (Match match in Regex.Matches(code, operatorPattern))
+            {
+                operatorCounts[match.Value]++;
+            }
+
+            // Build output string
+            StringBuilder output = new StringBuilder();
+            output.AppendLine("Keywords:");
+
+            foreach (var keyword in keywordCounts)
+            {
+                output.AppendLine($"{keyword.Key}: {keyword.Value}");
+            }
+
+            output.AppendLine("\nFunctions:");
+            foreach (var function in functionCounts)
+            {
+                output.AppendLine($"{function.Key}: {function.Value}");
+            }
+
+            output.AppendLine("\nOperators:");
+            foreach (var op in operatorCounts)
+            {
+                output.AppendLine($"{op.Key}: {op.Value}");
+            }
+
+            richTextBox2.Text = output.ToString();
+        }
     }
+    
 }
