@@ -75,6 +75,7 @@ namespace Orvenatics
                             string variableName = line.Substring(6, equalsIndex - 6).Trim();
                             string value = line.Substring(equalsIndex + 1).Trim();
 
+
                             if (value.Contains("+"))
                             {
                                 string evaluatedValue = EvaluateStringExpression(value);
@@ -378,35 +379,22 @@ namespace Orvenatics
 
             // Count keywords
 
-            // Count keywords
+            
             foreach (Match match in Regex.Matches(code, keywordPattern))
             {
                 keywordCounts[match.Value]++;
             }
 
-            // Count functions
+            
             foreach (Match match in Regex.Matches(code, functionPattern))
             {
                 functionCounts[match.Value]++;
             }
 
-            // Count operators
+            
             foreach (Match match in Regex.Matches(code, operatorPattern))
             {
                 operatorCounts[match.Value]++;
-            }
-
-            foreach (Match match in Regex.Matches(code, variablePattern))
-            {
-                string variableName = match.Groups[2].Value;
-                if (variableCounts.ContainsKey(variableName))
-                {
-                    variableCounts[variableName]++;
-                }
-                else
-                {
-                    variableCounts[variableName] = 1;
-                }
             }
 
             // Build output string
