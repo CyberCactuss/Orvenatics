@@ -14,7 +14,7 @@ namespace Orvenatics
         private Stack<string> undoStack = new Stack<string>();
         private Stack<string> redoStack = new Stack<string>();
 
-        private Dictionary<string, string> wordBank = new Dictionary<string, string>
+        private Dictionary<string, string> wordBank = new Dictionary<string, string> // word bank namen
         {
             { "kotoba", "string" },
             { "bango", "int" },
@@ -32,7 +32,7 @@ namespace Orvenatics
             pictureBox2.Paint += pictureBox2_Paint;
         }
 
-        private List<string> Tokenize(string line)
+        private List<string> Tokenize(string line) //token split to array
         {
             List<string> tokens = new List<string>();
 
@@ -43,7 +43,7 @@ namespace Orvenatics
                 if (wordBank.ContainsKey(word.ToLower()))
                 {
                     string tokenType = wordBank[word.ToLower()];
-                    if (tokenType == "int" || tokenType == "string" || tokenType == "function")
+                    if (tokenType == "bango" || tokenType == "kotoba" || tokenType == "batmopinapakita")
                     {
                         tokens.Add(tokenType);
                     }
@@ -106,7 +106,23 @@ namespace Orvenatics
                 {
                     if (line.StartsWith("kotoba"))
                     {
-                        // Handle string assignment
+                        int equalsIndex = line.IndexOf('=');
+                        if (equalsIndex != -1)
+                        {
+                            string variableName = line.Substring(6, equalsIndex - 6).Trim();
+                            if (wordBank.ContainsKey(variableName) || variableName == "batmopinapakita")
+                            {
+                                throw new Exception("Syntax error: '" + variableName + "' is a keyword and cannot be used as a variable.");
+                            }
+                            string value = line.Substring(equalsIndex + 1).Trim();
+
+                            string evaluatedValue = EvaluateStringExpression(value);
+                            Variables[variableName] = evaluatedValue;
+                        }
+                        else
+                        {
+                            throw new Exception("Syntax error: Missing '=' in assignment statement.");
+                        }
                     }
                     else if (line.StartsWith("bango"))
                     {
@@ -114,9 +130,9 @@ namespace Orvenatics
                         if (equalsIndex != -1)
                         {
                             string variableName = line.Substring(5, equalsIndex - 5).Trim();
-                            if (wordBank.ContainsKey(variableName))
+                            if (wordBank.ContainsKey(variableName) || variableName == "batmopinapakita")
                             {
-                                throw new Exception("Syntax error: '" + variableName + " ay isang keyword at hindi pwedeng gamitin bilang variable.");
+                                throw new Exception("Syntax error: '" + variableName + "' is a keyword and cannot be used as a variable.");
                             }
                             string value = line.Substring(equalsIndex + 1).Trim();
 
@@ -130,8 +146,30 @@ namespace Orvenatics
                     }
                     else if (line.StartsWith("batmopinapakita"))
                     {
-                    }
+                        string expression = line.Substring("batmopinapakita".Length).Trim();
 
+                        if (expression.StartsWith("(") && expression.EndsWith(")"))
+                        {
+                            expression = expression.Substring(1, expression.Length - 2).Trim();
+                        }
+
+                        string evaluatedValue = "";
+
+                        if (Variables.ContainsKey(expression))
+                        {
+                            evaluatedValue = Variables[expression];
+                        }
+                        else if (expression.StartsWith("\"") && expression.EndsWith("\""))
+                        {
+                            evaluatedValue = expression.Substring(1, expression.Length - 2);
+                        }
+                        else
+                        {
+                            evaluatedValue = EvaluateStringExpression(expression);
+                        }
+
+                        output += evaluatedValue + Environment.NewLine;
+                    }
                     else
                     {
                         throw new Exception("Syntax error: Unknown command. Line: " + line);
@@ -145,10 +183,6 @@ namespace Orvenatics
 
             return output;
         }
-
-
-
-
 
         private double EvaluateExpression(string expression)
         {
@@ -343,34 +377,31 @@ namespace Orvenatics
                 { "+", 0 },
                 { "-", 0 },
                 { "*", 0 },
-                { "/", 0 }, // Added divide operator
+                { "/", 0 },
                 { "=", 0 },
                 { "()", 0 }
             };
 
             Dictionary<string, int> variableCounts = new Dictionary<string, int>();
 
-            // Regular expressions for keywords, functions, and operators
+
             string keywordPattern = @"\b(kotoba|bango)\b";
             string functionPattern = @"\b(batmopinapakita)\b";
-            string operatorPattern = @"(\+|\-|\*|\/|=|\(\))"; // Updated to include the divide operator
+            string operatorPattern = @"(\+|\-|\*|\/|=|\(\))";
             string variablePattern = @"\b(kotoba|bango)\s+([a-zA-Z_][a-zA-Z0-9_]*)";
 
-            // Count keywords
 
-            // Count keywords
             foreach (Match match in Regex.Matches(code, keywordPattern))
             {
                 keywordCounts[match.Value]++;
             }
 
-            // Count functions
+
             foreach (Match match in Regex.Matches(code, functionPattern))
             {
                 functionCounts[match.Value]++;
             }
 
-            // Count operators
             foreach (Match match in Regex.Matches(code, operatorPattern))
             {
                 operatorCounts[match.Value]++;
@@ -389,7 +420,6 @@ namespace Orvenatics
                 }
             }
 
-            // Build output string
             StringBuilder output = new StringBuilder();
             output.AppendLine("Keywords:");
 
