@@ -20,7 +20,7 @@ namespace Orvenatics
             { "bango", "int" },
             { "batmopinapakita", "function" }
         };
-        //
+        
         public MainPage()
         {
             InitializeComponent();
@@ -448,6 +448,12 @@ namespace Orvenatics
 
 
             richTextBox2.Text = output.ToString();
+        }
+
+        private void guna2Button6_Click_1(object sender, EventArgs e)
+        {
+            Rules r = new Rules();
+            r.ShowDialog();
         }
     }
 }
