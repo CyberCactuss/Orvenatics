@@ -20,7 +20,7 @@ namespace Orvenatics
             { "bango", "int" },
             { "batmopinapakita", "function" }
         };
-        
+        //
         public MainPage()
         {
             InitializeComponent();
