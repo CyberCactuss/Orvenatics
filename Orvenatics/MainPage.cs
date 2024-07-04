@@ -19,7 +19,10 @@ namespace Orvenatics
     { "kotoba", "string" },
     { "bango", "int" },
     { "batmopinapakita", "function" },
-    { "ulit", "loop" }
+    { "ulit", "loop" },
+    { "kapag", "if" },
+    { "kapag iba pa", "else if" },
+    { "iba pa", "else" }
 };
 
         public MainPage()
@@ -95,6 +98,8 @@ namespace Orvenatics
         {
             string output = "";
             string[] lines = code.Split('\n').Select(line => line.Trim()).ToArray();
+            bool skipToNextBlock = false;
+            bool previousConditionMet = false;
 
             for (int i = 0; i < lines.Length; i++)
             {
@@ -174,7 +179,6 @@ namespace Orvenatics
                     }
                     else if (line.StartsWith("ulit"))
                     {
-                        
                         var match = Regex.Match(line, @"ulit\s*\((\d+)\)\s*batmopinapakita\s*\(([^)]+)\)");
                         if (match.Success)
                         {
@@ -206,9 +210,102 @@ namespace Orvenatics
                             throw new Exception("Syntax error: Invalid 'ulit' loop structure.");
                         }
                     }
+                    else if (line.StartsWith("kapag"))
+                    {
+                        var match = Regex.Match(line, @"kapag\s*\(([^)]+)\)");
+                        if (match.Success)
+                        {
+                            string condition = match.Groups[1].Value.Trim();
+                            bool conditionResult = EvaluateCondition(condition);
+
+                            if (conditionResult)
+                            {
+                                previousConditionMet = true;
+                                skipToNextBlock = false;
+                            }
+                            else
+                            {
+                                previousConditionMet = false;
+                                skipToNextBlock = true;
+                                while (i < lines.Length && !lines[i].StartsWith("kapag iba pa") && !lines[i].StartsWith("iba pa") && !lines[i].StartsWith("{") && !lines[i].StartsWith("}"))
+                                {
+                                    i++;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            throw new Exception("Syntax error: Invalid 'kapag' condition.");
+                        }
+                    }
+                    else if (line.StartsWith("kapag iba pa"))
+                    {
+                        if (skipToNextBlock)
+                        {
+                            var match = Regex.Match(line, @"kapag iba pa\s*\(([^)]+)\)");
+                            if (match.Success)
+                            {
+                                string condition = match.Groups[1].Value.Trim();
+                                bool conditionResult = EvaluateCondition(condition);
+
+                                if (conditionResult)
+                                {
+                                    previousConditionMet = true;
+                                    skipToNextBlock = false;
+                                }
+                                else
+                                {
+                                    previousConditionMet = false;
+                                    skipToNextBlock = true;
+                                    while (i < lines.Length && !lines[i].StartsWith("iba pa") && !lines[i].StartsWith("{") && !lines[i].StartsWith("}"))
+                                    {
+                                        i++;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                throw new Exception("Syntax error: Invalid 'kapag iba pa' condition.");
+                            }
+                        }
+                        else
+                        {
+                            previousConditionMet = false;
+                            skipToNextBlock = true;
+                            while (i < lines.Length && !lines[i].StartsWith("iba pa") && !lines[i].StartsWith("{") && !lines[i].StartsWith("}"))
+                            {
+                                i++;
+                            }
+                        }
+                    }
+                    else if (line.StartsWith("iba pa"))
+                    {
+                        if (!previousConditionMet)
+                        {
+                            skipToNextBlock = false;
+                        }
+                        else
+                        {
+                            skipToNextBlock = true;
+                        }
+                    }
                     else
                     {
-                        throw new Exception("Syntax error: Unknown command. Line: " + line);
+                        if (!skipToNextBlock)
+                        {
+                            if (line.StartsWith("{"))
+                            {
+                                continue;
+                            }
+                            else if (line.EndsWith("}"))
+                            {
+                                continue;
+                            }
+                            else
+                            {
+                                output += line + Environment.NewLine;
+                            }
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -220,6 +317,16 @@ namespace Orvenatics
             return output;
         }
 
+        private bool EvaluateCondition(string condition)
+        {
+            foreach (var variable in Variables)
+            {
+                condition = condition.Replace(variable.Key, variable.Value);
+            }
+
+            var table = new DataTable();
+            return Convert.ToBoolean(table.Compute(condition, string.Empty));
+        }
         private double EvaluateExpression(string expression)
         {
             foreach (var variable in Variables)
