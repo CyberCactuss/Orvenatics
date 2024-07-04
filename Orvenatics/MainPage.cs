@@ -14,13 +14,14 @@ namespace Orvenatics
         private Stack<string> undoStack = new Stack<string>();
         private Stack<string> redoStack = new Stack<string>();
 
-        private Dictionary<string, string> wordBank = new Dictionary<string, string> // word bank namen
-        {
-            { "kotoba", "string" },
-            { "bango", "int" },
-            { "batmopinapakita", "function" }
-        };
-        
+        private Dictionary<string, string> wordBank = new Dictionary<string, string>
+{
+    { "kotoba", "string" },
+    { "bango", "int" },
+    { "batmopinapakita", "function" },
+    { "ulit", "loop" }
+};
+
         public MainPage()
         {
             InitializeComponent();
@@ -95,8 +96,9 @@ namespace Orvenatics
             string output = "";
             string[] lines = code.Split('\n').Select(line => line.Trim()).ToArray();
 
-            foreach (string line in lines)
+            for (int i = 0; i < lines.Length; i++)
             {
+                string line = lines[i];
                 if (string.IsNullOrWhiteSpace(line))
                 {
                     continue;
@@ -169,6 +171,40 @@ namespace Orvenatics
                         }
 
                         output += evaluatedValue + Environment.NewLine;
+                    }
+                    else if (line.StartsWith("ulit"))
+                    {
+                        
+                        var match = Regex.Match(line, @"ulit\s*\((\d+)\)\s*batmopinapakita\s*\(([^)]+)\)");
+                        if (match.Success)
+                        {
+                            int loopCount = int.Parse(match.Groups[1].Value);
+                            string expression = match.Groups[2].Value.Trim();
+
+                            for (int j = 0; j < loopCount; j++)
+                            {
+                                string evaluatedValue = "";
+
+                                if (Variables.ContainsKey(expression))
+                                {
+                                    evaluatedValue = Variables[expression];
+                                }
+                                else if (expression.StartsWith("\"") && expression.EndsWith("\""))
+                                {
+                                    evaluatedValue = expression.Substring(1, expression.Length - 2);
+                                }
+                                else
+                                {
+                                    evaluatedValue = EvaluateStringExpression(expression);
+                                }
+
+                                output += evaluatedValue + Environment.NewLine;
+                            }
+                        }
+                        else
+                        {
+                            throw new Exception("Syntax error: Invalid 'ulit' loop structure.");
+                        }
                     }
                     else
                     {
